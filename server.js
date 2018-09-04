@@ -758,9 +758,6 @@ server.post('/blogImage', function(req, res){
     url=url.replace(/\\/g,'/')
 
     res.json(url)
-
-
-
 });
 
 
