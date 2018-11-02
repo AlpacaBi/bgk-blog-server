@@ -171,10 +171,10 @@ server.use('/public',express.static('public'))
  * 效果：让“首页”界面列出所有文章标题、文章简介和文章发表时间
  */
 server.get('/homeArticleList', (req, res)=>{
-    db.query("SELECT ID,article_title,article_summary,article_push_time FROM article_table ORDER BY ID DESC LIMIT 10",(err,data)=>{
+    db.query("SELECT ID,article_title,article_summary,article_type,article_push_time FROM article_table ORDER BY ID DESC LIMIT 10",(err,data)=>{
         if(err){
             console.log(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -196,20 +196,20 @@ server.get('/homeArticleList', (req, res)=>{
 server.get('/getArticleList', (req, res)=>{
     var id=req.query.tabid;
     if(id=='all'){
-        db.query(`SELECT ID,article_title,article_push_time FROM article_table  ORDER BY ID DESC`,(err,data)=>{
+        db.query(`SELECT ID,article_title,article_type,article_push_time FROM article_table  ORDER BY ID DESC`,(err,data)=>{
             if(err){
                 console.error(err);
-                res.status(500).send('database error').end();
+                res.status(500).send(err).end();
             }else{
                 res.json(data);
             }
         });
     }
     else{
-        db.query(`SELECT ID,article_title,article_push_time FROM article_table WHERE article_type='${id}'  ORDER BY ID DESC`,(err,data)=>{
+        db.query(`SELECT ID,article_title,article_type,article_push_time FROM article_table WHERE article_type='${id}'  ORDER BY ID DESC`,(err,data)=>{
             if(err){
                 console.error(err);
-                res.status(500).send('database error').end();
+                res.status(500).send(err).end();
             }else{
                 res.json(data);
             }
@@ -230,7 +230,7 @@ server.get('/getArticles', (req, res)=>{
     db.query(`SELECT * FROM article_table WHERE ID=${id} ORDER BY ID DESC`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -252,7 +252,7 @@ server.get('/getMessage', (req, res)=>{
     db.query("SELECT * FROM message_table ORDER BY ID DESC",(err,data)=>{
         if(err){
             console.log(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -271,11 +271,29 @@ server.post('/pushMessage', function(req, res){
     var username=req.body.username;
     var avatar=req.body.avatar;
     var message=req.body.message;
+    var email='';
 
-    db.query(`INSERT INTO message_table (user_id,user_name,user_avatar,message) VALUE ('${userID}','${username}','${avatar}','${message}')`,(err,data)=>{
+    db.query(`INSERT INTO message_table (user_id,user_name,user_avatar,message,user_email) VALUE ('${userID}','${username}','${avatar}','${message}','${email}')`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).end();
+        }
+    });
+});
+
+server.post('/vsr_pushMessage', function(req, res){
+    var userID=0;
+    var username=req.body.username;
+    var avatar='vister';
+    var message=req.body.message;
+    var email=req.body.email;
+
+    db.query(`INSERT INTO message_table (user_id,user_name,user_avatar,message,user_email) VALUE ('${userID}','${username}','${avatar}','${message}','${email}')`,(err,data)=>{
+        if(err){
+            console.error(err);
+            res.status(500).send(err).end();
         }else{
             res.status(200).end();
         }
@@ -307,7 +325,7 @@ server.post('/userReg', function(req, res){
         db.query(`INSERT INTO user_table (username,password,signature,avatar,email) VALUE ('${username}','${password}','${signature}','${avatar}','${email}')`,(err,data)=>{
             if(err){
                 console.error(err);
-                res.status(500).send('database error').end();
+                res.status(500).send(err).end();
             }else{
 
                 res.status(200).end();
@@ -339,15 +357,30 @@ server.post('/userLogin', function(req, res){
     db.query(`SELECT * FROM user_table WHERE username='${username}'`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
-        }else{
+            var response = {
+                message: "数据库发生错误，请稍后再试"
+            }
+            res.json(response).end();
 
-            if (username && data[0].username==username && data[0].password==password ) {
+        }else{
+            if (username && data && data[0].username==username && data[0].password==password ) {
+                var response = {
+                    message: "登陆成功"
+                }
                 req.session['ID']=data[0].ID;
+                res.json(response);
             }
             else{
-                res.status(400).send('账户或密码错误');
+                var response = {
+                    message: "账户或密码错误"
+                }
+                res.json(response);
             }
+
+
+
+
+
 
             res.status(200).end();
 
@@ -419,7 +452,7 @@ server.post('/adminlogin', function(req, res){
     db.query(`SELECT * FROM adminusers`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
 
             if (data[0].admin_username==username && data[0].admin_password==password ) {
@@ -470,7 +503,7 @@ server.get('/delArticleList', (req, res)=>{
     db.query("SELECT ID,article_title FROM article_table",(err,data)=>{
         if(err){
             console.log(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -489,7 +522,7 @@ server.get('/getUserList', (req, res)=>{
     db.query("SELECT ID,username,email FROM user_table ORDER BY ID DESC",(err,data)=>{
         if(err){
             console.log(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -507,7 +540,7 @@ server.get('/getMessageList', (req, res)=>{
     db.query("SELECT ID,user_name,message FROM message_table ORDER BY ID DESC",(err,data)=>{
         if(err){
             console.log(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.json(data);
         }
@@ -535,7 +568,7 @@ server.post('/delArticle', (req, res)=>{
     db.query(`DELETE  FROM article_table WHERE ID=${id}`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.status(200).end();
         }
@@ -558,7 +591,7 @@ server.post('/delUser', (req, res)=>{
     db.query(`DELETE  FROM user_table WHERE ID=${id}`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
 
             res.status(200).end();
@@ -581,7 +614,7 @@ server.post('/delMessage', (req, res)=>{
     db.query(`DELETE  FROM message_table WHERE ID=${id}`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
 
             res.status(200).end();
@@ -608,7 +641,7 @@ server.post('/addArticle', function(req, res){
     db.query(`INSERT INTO article_table (article_title,article_summary,article_type,article_context) VALUE ('${title}','${summary}','${type}','${context}')`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.status(200).end();
         }
@@ -669,9 +702,9 @@ server.post('/updatePassword', function(req, res){
     WHERE ID='${id}'`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
-            res.status(200).send('update success').end();
+            res.status(200).send('更新成功').end();
         }
     });
 });
@@ -700,12 +733,32 @@ server.post('/updateUserInfo', function(req, res){
     WHERE ID='${id}'`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.status(200).send('update success').end();
         }
     });
 });
+
+/**
+ * 接口：updateArticleList'
+ * UI位置：首页
+ * 功能：从数据库里的article_table读取所有留言的ID（文章ID），article_title（文章标题），
+ *      article_summary（文章简介），article_push_time（文章发表时间）并返回到请求端
+ * 效果：让“首页”界面列出所有文章标题、文章简介和文章发表时间
+ */
+server.get('/updateArticleList', (req, res)=>{
+    db.query("SELECT ID,article_title,article_summary,article_push_time FROM article_table ORDER BY ID DESC",(err,data)=>{
+        if(err){
+            console.log(err);
+            res.status(500).send(err).end();
+        }else{
+            res.json(data);
+        }
+    });
+});
+
+
 
 
 /**
@@ -729,7 +782,7 @@ server.post('/updateArticle', function(req, res){
     WHERE ID='${id}'`,(err,data)=>{
         if(err){
             console.error(err);
-            res.status(500).send('database error').end();
+            res.status(500).send(err).end();
         }else{
             res.status(200).send('update success').end();
         }
@@ -758,6 +811,171 @@ server.post('/blogImage', function(req, res){
     url=url.replace(/\\/g,'/')
 
     res.json(url)
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+server.get('/getShareList', (req, res)=>{
+    var id=req.query.tabid;
+        db.query(`SELECT ID,share_title FROM share_table  ORDER BY ID DESC`,(err,data)=>{
+            if(err){
+                console.error(err);
+                res.status(500).send(err).end();
+            }else{
+                res.json(data);
+            }
+        });
+});
+
+
+
+/**
+ * 接口：/Shares
+ * UI位置：文章 || 后台=》修改文章
+ * 功能：读取前台发上来的ID，从数据库里的article_title读取该ID的所有内容，并返回到请求端
+ * 效果：让“文章 || 后台=》修改文章”这两个界面列出某个文章的所有内容
+ */
+server.get('/getShares', (req, res)=>{
+    var id=req.query.id;
+    db.query(`SELECT * FROM share_table WHERE ID=${id} ORDER BY ID DESC`,(err,data)=>{
+        if(err){
+            console.error(err);
+            res.status(500).send(err).end();
+        }else{
+            res.json(data);
+        }
+    });
+});
+
+
+
+/**
+ * 接口：/addShare
+ * UI位置：后台=》添加文章
+ * 功能：读取前台POST来的表单信息，把表单信息添加到数据库里的article_table
+ * 效果：让“后台=》添加文章”添加新文章
+ */
+server.post('/addShare', function(req, res){
+    var title=req.body.title;
+    var context=req.body.context;
+
+
+    db.query(`INSERT INTO share_table (share_title,share_context) VALUE ('${title}','${context}')`,(err,data)=>{
+        if(err){
+            console.error(err);
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).end();
+        }
+    });
+});
+
+
+/**
+ * 接口：/updateShare
+ * UI位置：后台=》修改文章
+ * 功能：接受前台post来的表单信息（文章id和文章其他信息），update article_table的对应文章信息
+ * 效果：实现管理员更改文章内容功能
+ */
+server.post('/updateShare', function(req, res){
+    var id=req.body.id;
+    var title=req.body.title;
+    var context=req.body.context;
+
+    db.query(`UPDATE share_table SET 
+    share_title='${title}',
+    share_context='${context}'
+    WHERE ID='${id}'`,(err,data)=>{
+        if(err){
+            console.error(err);
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).send('update success').end();
+        }
+    });
+});
+
+
+server.post('/delShare', (req, res)=>{
+    var id=req.body.id;
+    db.query(`DELETE  FROM share_table WHERE ID=${id}`,(err,data)=>{
+        if(err){
+            console.error(err);
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).end();
+        }
+    });
+});
+
+
+
+
+server.get('/getComment', (req, res)=>{
+
+    var id=req.query.id;
+
+    db.query(`SELECT * FROM comment_table WHERE article_id=${id} ORDER BY ID DESC`,(err,data)=>{
+        if(err){
+            console.log(err);
+            res.status(500).send(err).end();
+        }else{
+            res.json(data);
+        }
+    });
+});
+
+
+server.post('/pushComment', function(req, res){
+    var aID=req.body.aID;
+    var userID=req.body.userID;
+    var username=req.body.username;
+    var avatar=req.body.avatar;
+    var comment=req.body.comment;
+
+
+    db.query(`INSERT INTO comment_table (article_id,user_id,user_name,user_avatar,comment) VALUE ('${aID}','${userID}','${username}','${avatar}','${comment}')`,(err,data)=>{
+        if(err){
+            console.error();
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).end();
+        }
+    });
+});
+
+
+server.post('/vsr_pushComment', function(req, res){
+    var aID=req.body.aID;
+    var userID=0;
+    var username=req.body.username;
+    var avatar='vister';
+    var comment=req.body.message;
+    var email=req.body.email
+
+
+    db.query(`INSERT INTO comment_table (article_id,user_id,user_name,user_avatar,comment,email) VALUE ('${aID}','${userID}','${username}','${avatar}','${comment}','${email}')`,(err,data)=>{
+        if(err){
+            console.error();
+            res.status(500).send(err).end();
+        }else{
+            res.status(200).end();
+        }
+    });
 });
 
 
