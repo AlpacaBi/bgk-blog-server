@@ -320,22 +320,24 @@ server.post('/userReg', function(req, res){
     md.update('一个人的命运啊，当然要靠自我奋斗，'+req.body.password+'但是也要考虑到历史的行程')
     let password=md.digest().toHex()
 
-    if( username && password && signature && email ){
 
+    if( username && password && signature && email ){
         db.query(`INSERT INTO user_table (username,password,signature,avatar,email) VALUE ('${username}','${password}','${signature}','${avatar}','${email}')`,(err,data)=>{
             if(err){
                 console.error(err);
-                res.status(500).send(err).end();
+                res.json({message: "数据库发生错误，请稍后再试"});
             }else{
-
-                res.status(200).end();
-
+                res.json({message: "注册成功，马上登陆吧！！！"});
             }
+            res.status(200).end();
         });
     }
     else{
-        console.log('reg fail')
+        res.json({message: "注册失败，请稍后再试！！！"});
+        res.status(200).end();
     }
+
+
 
 });
 
@@ -354,37 +356,27 @@ server.post('/userLogin', function(req, res){
     let password=md.digest().toHex()
 
 
+
     db.query(`SELECT * FROM user_table WHERE username='${username}'`,(err,data)=>{
         if(err){
             console.error(err);
-            var response = {
-                message: "数据库发生错误，请稍后再试"
-            }
-            res.json(response).end();
-
+            res.json({message: "数据库发生错误，请稍后再试"});
         }else{
-            if (username && data && data[0].username==username && data[0].password==password ) {
-                var response = {
-                    message: "登陆成功"
+
+            if (data.length>0) {
+                if (data[0].username==username && data[0].password==password ) {
+                    req.session['ID']=data[0].ID;
+                    res.json({message: "登陆成功"});
                 }
-                req.session['ID']=data[0].ID;
-                res.json(response);
-            }
-            else{
-                var response = {
-                    message: "账户或密码错误"
+                else{
+                    res.json({message: "账户或密码错误"});
                 }
-                res.json(response);
+            }else{
+                res.json({message: "用户不存在"});
             }
-
-
-
-
-
-
-            res.status(200).end();
-
         }
+
+        res.status(200).end();
     });
 });
 
@@ -429,6 +421,10 @@ server.get('/getUserLogin', (req, res)=>{
  */
 server.get('/userLogOut', (req, res)=>{
     req.session['ID'] = null;
+
+    var response = {message: "注销成功！！！"}
+    res.json(response);
+
     res.status(200).end();
 });
 
