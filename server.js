@@ -320,7 +320,6 @@ server.post('/userReg', function(req, res){
     md.update('一个人的命运啊，当然要靠自我奋斗，'+req.body.password+'但是也要考虑到历史的行程')
     let password=md.digest().toHex()
 
-
     if( username && password && signature && email ){
         db.query(`INSERT INTO user_table (username,password,signature,avatar,email) VALUE ('${username}','${password}','${signature}','${avatar}','${email}')`,(err,data)=>{
             if(err){
@@ -354,8 +353,6 @@ server.post('/userLogin', function(req, res){
     let md=forge.md.md5.create();
     md.update('一个人的命运啊，当然要靠自我奋斗，'+req.body.password+'但是也要考虑到历史的行程')
     let password=md.digest().toHex()
-
-
 
     db.query(`SELECT * FROM user_table WHERE username='${username}'`,(err,data)=>{
         if(err){
