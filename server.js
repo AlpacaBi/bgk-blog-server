@@ -326,7 +326,7 @@ server.post('/userReg', function(req, res){
                 console.error(err);
                 res.json({message: "数据库发生错误，请稍后再试"});
             }else{
-                res.json({message: "注册成功，马上登陆吧！！！"});
+                res.json({message: "注册成功，正在登陆中！！！"});
             }
             res.status(200).end();
         });
@@ -349,11 +349,13 @@ server.post('/userReg', function(req, res){
  * 效果：实现用户登陆功能
  */
 server.post('/userLogin', function(req, res){
-    var username=req.body.username;
+    let username=req.body.username;
 
     let md=forge.md.md5.create();
     md.update('一个人的命运啊，当然要靠自我奋斗，'+req.body.password+'但是也要考虑到历史的行程')
     let password=md.digest().toHex()
+
+
 
     db.query(`SELECT * FROM user_table WHERE username='${username}'`,(err,data)=>{
         if(err){
